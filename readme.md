@@ -60,7 +60,7 @@ La recolección responde a un mandato legal federal (*Hate Crime Statistics Act*
 
 **Anual.** El FBI publica una nueva entrega alrededor del tercer o cuarto trimestre del año siguiente al reportado (por ejemplo, los datos completos de 2023 se publicaron en el otoño de 2024). En ocasiones emite **suplementos** a mitad de año cuando agencias tardías completan sus envíos. La revisión 2024 ampliada está prevista para finales de 2025 / inicios de 2026.
 
-### 2.6 Dimensiones
+### 2.6 Dimensiones (tabla hecha por Claude AI)
 
 - **Alcance temporal seleccionado por el equipo:** 1991 – último año disponible.
 - **Volumen aproximado de registros:** ≈ **250,000 incidentes** acumulados de 1991 a 2023 (el número crece con cada entrega anual; un año típico reciente aporta entre 8,000 y 12,000 incidentes).
