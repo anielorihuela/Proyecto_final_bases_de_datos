@@ -3,7 +3,7 @@
 **Curso:** COM-12101-001 · Bases de Datos · Primavera 2026
 **Dataset:** FBI Hate Crime Statistics (Crime Data Explorer)
 **Equipo:** Valentina García Ramírez | Aniel Orihuela | Diego Manrique | Diego Hinojosa
-**Profesor:** Marco Augusto Vásquez Beltran
+**Profesor:** Marco Augusto Vásquez Beltran.
 **Se hizo uso de Claude AI para la organización, limpieza y para cualquier gráfico o tabla que se encuentra en este Readme.md**
 
 ---
@@ -232,4 +232,4 @@ Las tres últimas categorías son precisamente las columnas multivaluadas que ju
 
 ## 7. Créditos
 
-> Federal Bureau of Investigation, Criminal Justice Information Services Division (CJIS). *Uniform Crime Reporting Program — Hate Crime Statistics*. Crime Data Explorer. Disponible en https://cde.ucr.cjis.gov/ (consultado el 20 de abril de 2026).
+> Federal Bureau of Investigation, Criminal Justice Information Services Division (CJIS). *Uniform Crime Reporting Program — Hate Crime Statistics*. Crime Data Explorer. https://cde.ucr.cjis.gov/
