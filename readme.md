@@ -4,6 +4,7 @@
 **Dataset:** FBI Hate Crime Statistics (Crime Data Explorer)
 **Equipo:** Valentina García Ramírez | Aniel Orihuela | Diego Manrique | Diego Hinojosa
 **Profesor:** Marco Augusto Vásquez Beltran
+**Se hizo uso de Claude AI para la organización, limpieza y para cualquier gráfico o tabla que se encuentra en este Readme.md**
 
 ---
 
