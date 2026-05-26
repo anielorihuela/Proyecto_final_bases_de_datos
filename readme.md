@@ -157,7 +157,7 @@ Se expondrán más a detalle en la sección 7, pero las preguntas que queremos p
 
 ### 4.3 Métodos y recursos
 
-Para asegurarnos que se podrá tener acceso sin problema a las APIs y a la base de datos en general, optamos por usar render. La base de datos es manipulada localmente desde DBeaver(PostgresSQL), pero render permite guardarla en la nube, por lo que usando CORS podemos especificar quién tiene acceso a la base. 
+Para asegurarnos que se podrá tener acceso sin problema a las APIs y a la base de datos en general, optamos por usar render. La base de datos es manipulada localmente desde DBeaver(PostgresSQL), pero render permite guardarla en la nube. 
 
 Se hizo uso igualmente de FastAPI, Pydantic BaseModel, Base y SQLAlchemy para lograr la interacción entre el cliente y el servidor.
 
