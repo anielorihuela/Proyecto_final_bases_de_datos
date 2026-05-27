@@ -9,6 +9,15 @@ from conexion import DB_CONNECTION_STRING
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"],  
+)
+
+
 if not DB_CONNECTION_STRING:
     raise ValueError("La variable de entorno DB_CONNECTION_STRING no está definida")
 
