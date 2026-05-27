@@ -48,7 +48,6 @@ class TipoVictimaCrear(BaseModel):
 
 #incidente
 class IncidenteCrear(BaseModel):
-    fecha: str
     agencia_ori: str = Field(max_length=9)
     fecha_incidente: date
     anio_reporte: int
