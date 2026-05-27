@@ -268,13 +268,16 @@ def reportes_por_agencia_region(nombre_region: str, db: Session = Depends(get_db
 
 @app.get("/consultas-avanzadas/ratio-sesgo-menores-adultos/{sesgo}", response_model=RatioSesgoMenoresAdultosResponse)
 def ratio_sesgo_menores_adultos(sesgo: str, db: Session = Depends(get_db)):
-    query = text("""select 
+    query = text("""select
     sesgo.descripcion as sesgo,
     sum(incidente.numero_victimas_menores) as total_victimas_menores,
     sum(incidente.numero_victimas_adultas) as total_victimas_adultas,
-    sum(incidente.numero_victimas_menores)::decimal / 
+    sum(incidente.numero_victimas_menores)::decimal /
     nullif(sum(incidente.numero_victimas_adultas), 0)
-    as ratio_menores_adultos
+    as ratio_menores_adultos,
+    (sum(incidente.numero_victimas_menores)::decimal / 
+    nullif(sum(incidente.numero_victimas_menores) + sum(incidente.numero_victimas_adultas), 0) * 100)
+    as porcentaje_menores
     from incidente
     inner join incidente_sesgo on incidente.id = incidente_sesgo.incidente_id
     inner join sesgo on incidente_sesgo.sesgo_id = sesgo.id
@@ -287,44 +290,74 @@ def ratio_sesgo_menores_adultos(sesgo: str, db: Session = Depends(get_db)):
         sesgo=result[0],
         total_victimas_menores=result[1],
         total_victimas_adultas=result[2],
-        ratio_menores_adultos=result[3]
+        ratio_menores_adultos=result[3],
+        porcentaje_menores=result[4]
     )
 
 @app.get("/consultas-avanzadas/estadisticas-por-estado/", response_model=list[EstadisticasPorEstadoResponse])
 def estadisticas_por_estado(db: Session = Depends(get_db)):
-    query = text("""with incidentes_por_anio as (
-    select 
+    query = text("""with poblacion_estado as (
+    select
         estado.nombre as estado,
-        incidente.anio_reporte as anio,
-        count(*) as incidentes_anio
-    from incidente
-    inner join agencia on incidente.agencia_ori = agencia.ori
-    inner join estado on agencia.estado_abbr = estado.abbr
-    group by estado.nombre, incidente.anio_reporte
-),
-estado_stats as (
-    select 
-        estado,
-        sum(incidentes_anio) as total_incidentes,
-        cast(sum(incidentes_anio) as decimal) / count(distinct anio) as promedio_por_anio
-    from incidentes_por_anio
-    group by estado
-),
-anio_pico as (
-    select 
-        estado,
-        anio as anio_pico,
-        row_number() over (partition by estado order by incidentes_anio desc) as rn
-    from incidentes_por_anio
-)
-select 
-    estado_stats.estado,
-    estado_stats.total_incidentes,
-    estado_stats.promedio_por_anio,
-    anio_pico.anio_pico
-from estado_stats
-inner join anio_pico on estado_stats.estado = anio_pico.estado and anio_pico.rn = 1
-order by estado_stats.total_incidentes desc;""")
+        sum(
+            coalesce(
+                (gp.min_poblacion + gp.max_poblacion) / 2.0,
+                gp.max_poblacion,
+                gp.min_poblacion
+            )
+        ) as poblacion_estimada
+        from agencia
+        join estado on agencia.estado_abbr = estado.abbr
+        join grupo_poblacional gp on agencia.grupo_poblacional = gp.codigo
+        where gp.min_poblacion is not null or gp.max_poblacion is not null
+        group by estado.nombre
+        ),
+        incidentes_por_anio as (
+            select
+                estado.nombre as estado,
+                incidente.anio_reporte as anio,
+                count(*) as incidentes_anio
+            from incidente
+            inner join agencia on incidente.agencia_ori = agencia.ori
+            inner join estado on agencia.estado_abbr = estado.abbr
+            group by estado.nombre, incidente.anio_reporte
+        ),
+        estado_stats as (
+            select
+                estado,
+                sum(incidentes_anio) as total_incidentes,
+                cast(sum(incidentes_anio) as decimal) / count(distinct anio)
+                as promedio_por_anio
+            from incidentes_por_anio
+            group by estado
+        ),
+        anio_pico as (
+            select
+                estado,
+                anio as anio_pico,
+                row_number() over (
+                    partition by estado
+                    order by incidentes_anio desc
+                ) as rn
+            from incidentes_por_anio
+        )
+        select
+            estado_stats.estado,
+            estado_stats.total_incidentes,
+            estado_stats.promedio_por_anio,
+            anio_pico.anio_pico,
+            round(pe.poblacion_estimada) as poblacion_estimada,
+            round(
+                (estado_stats.total_incidentes::decimal / nullif(pe.poblacion_estimada, 0)) * 100000,
+                2
+            ) as incidentes_por_100k
+            from estado_stats
+            inner join anio_pico
+                on estado_stats.estado = anio_pico.estado
+                and anio_pico.rn = 1
+            left join poblacion_estado pe on pe.estado = estado_stats.estado
+            order by incidentes_por_100k desc
+            limit 10;""")
     results = db.execute(query).fetchall()
     response = []
     for row in results:
@@ -332,7 +365,9 @@ order by estado_stats.total_incidentes desc;""")
             estado=row[0],
             total_incidentes=row[1],
             promedio_por_anio=float(row[2]),
-            anio_pico=row[3]
+            anio_pico=row[3],
+            poblacion_estimada=row[4],
+            incidentes_por_100k=float(row[5]) if row[5] is not None else None
         ))
     return response
 

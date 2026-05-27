@@ -260,13 +260,16 @@ class RatioSesgoMenoresAdultosResponse(BaseModel):
     total_victimas_menores: int
     total_victimas_adultas: int
     ratio_menores_adultos: float
+    porcentaje_menores: float
     
 class EstadisticasPorEstadoResponse(BaseModel):
     estado: str
     total_incidentes: int
     promedio_por_anio: float
     anio_pico: int
-
+    poblacion_estimada: int | None
+    incidentes_por_100k: float | None
+    
 #--------------------------Update-------------------------------
 #Agencia
 class AgenciaUpdate(BaseModel):

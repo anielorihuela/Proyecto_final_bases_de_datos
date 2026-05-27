@@ -428,7 +428,12 @@ select total_victimas, sesgo_desc, ranking
 from ranks
 where ranking = {parámetro del endpoint};
 ```
+#### Resultados
+![Sesgos más peligrosos](./graficos/query1.png)
 
+En este primer query analizamos cuáles son los sesgos que han causado más víctimas dentro de la base de datos de crímenes de odio reportados al FBI. Para obtener esto se sumó el total de víctimas de cada incidente y se agrupó por tipo de sesgo, así pudimos ver no solo qué sesgos aparecen más veces, sino cuáles acumulan más daño en términos de víctimas. El resultado más importante es que el sesgo Anti-Black or African American aparece en primer lugar por una diferencia muy grande frente a todos los demás, lo cual muestra que este grupo ha sido uno de los más afectados históricamente en los registros. Después aparecen sesgos como Anti-White, Anti-Gay Male, Anti-Jewish y Anti-Hispanic or Latino, pero ninguno se acerca al primer lugar. Algo importante es que este query mide víctimas, no simplemente incidentes, entonces un sesgo puede subir en el ranking si los incidentes asociados a él tienen más personas afectadas. También hay que recordar que estos datos dependen de reportes oficiales, por lo que no necesariamente reflejan todos los crímenes ocurridos, sino los registrados por las agencias.
+
+---
 ### 7.2 Tendencia anual de incidentes
 
 **Pregunta:** ¿Está aumentando o disminuyendo el número de crímenes?
@@ -461,6 +466,12 @@ select
     group by anio_reporte
     order by anio_reporte
 ```
+#### Resultados
+![Tend anual](./graficos/query2.png)
+
+En este segundo query analizamos la tendencia anual de incidentes de crímenes de odio entre 1991 y 2024. Lo que hicimos fue contar cuántos incidentes hubo por año y después comparar cada año con el anterior usando LAG(), para obtener también el porcentaje de cambio año con año. En la gráfica se puede observar que durante los años noventa hubo varios aumentos importantes, después entre 2002 y más o menos 2018 la tendencia se mantuvo relativamente estable, con subidas y bajadas pero sin un crecimiento tan fuerte. A partir de 2019 y sobre todo después de 2020 se nota un aumento más marcado en los reportes, llegando a niveles cercanos a los más altos de toda la serie. Esto puede indicar un crecimiento real de incidentes, pero también puede estar relacionado con mayor visibilidad social, cambios en los mecanismos de reporte o más atención institucional hacia los crímenes de odio. Por eso, la interpretación debe ser cuidadosa, porque el query muestra incidentes reportados al FBI, no necesariamente el total real de crímenes de odio ocurridos.
+
+---
 
 ### 7.3 Combinaciones ofensa-sesgo más frecuentes
 
@@ -513,7 +524,25 @@ from combinaciones
 order by frecuencia desc
 limit {path del endpoint};
 ```
+#### Resultados
+![Comb ofensa-sesgo](./graficos/query3.png)
 
+En este query sacamos los primeros 5 tipos de ofensas que notamos más en la base de 
+datos siendo el primero ataque de intimidación y el último un ataque donde ya se ataca de 
+manera seria a la otra persona dejándole alguna severa lesión. También vemos que hay una 
+mayor tendencia de estos 5 tipos de ataques para las persona de color o afro americanas. 
+Como ya sabemos Estados Unidos tiene un gran porcentaje de odio hacia estas personas y 
+lo hace notar más con sus resultados aún empleando la parte de black live matter que tomó 
+más importancia en el 2020. Hay que también marcar una diferencia aquí porque como 
+vemos hay una gran tendencia de vandalismo, destrucción y daño hacia las personas judías 
+pero es muy diferente a lo que hay tendencia contra las personas de color ya que a ellas les 
+llegan hasta hacer daño físico, mientras que en el caso de las personas judías solo hay 
+daños a sus templos o propiedades no directamente. Pareciera no ser mucho pero es 
+importante ver que hubo una frecuencia registrada de 33,701 ataques de solo intimidación y 
+aunque parezca poco los ataques de asalto físico si es grave que mínimo se hayan 
+registrado unos 10,792 ataques.  
+
+---
 ### 7.4 Agencias por performance (incidentes vs región)
 
 **Pregunta:** ¿Qué agencias reportan más incidentes comparadas con otras de su región?
@@ -575,7 +604,12 @@ select
 from agencia_reportes
 order by region, ranking_en_region;
 ```
+#### Resultados
+![Comb ofensa-sesgo](./graficos/query4.png)
 
+En este cuarto query observamos donde más agencias con incidentes se reportaron dividido por puntos cardinales, siendo el número uno el Oeste con California, Oregon, Washington, Nevada y Colorado. El último siendo el sur con DC, Maryland, Virginia, Texas y Georgia. De aquí la tabla nos enseña los diferentes estados dentro de este donde más hubo accidentes. Algo interesante es por ejemplo que ciudades grandes como nueva york, los ángeles y chicago tienen un mayor registro a comparación con otras partes esto también puede darse porque son ciudades grandes entonces se registran másincidentes al ser más personas.  
+
+---
 ### 7.5 Crímenes contra menores vs adultos
 
 **Pregunta:** ¿Hay sesgos que atacan más a menores de edad?
@@ -584,33 +618,50 @@ order by region, ranking_en_region;
 
 ```sql
 -- Versión para sacar tablas y/o gráficas
-select 
+
+select
     sesgo.descripcion as sesgo,
     sum(incidente.numero_victimas_menores) as total_victimas_menores,
     sum(incidente.numero_victimas_adultas) as total_victimas_adultas,
-    sum(incidente.numero_victimas_menores)::decimal / 
+    sum(incidente.numero_victimas_menores)::decimal /
     nullif(sum(incidente.numero_victimas_adultas), 0)
-    as ratio_menores_adultos
+    as ratio_menores_adultos,
+    (sum(incidente.numero_victimas_menores)::decimal / 
+    nullif(sum(incidente.numero_victimas_menores) + sum(incidente.numero_victimas_adultas), 0) * 100)
+    as porcentaje_menores
     from incidente
     inner join incidente_sesgo on incidente.id = incidente_sesgo.incidente_id
     inner join sesgo on incidente_sesgo.sesgo_id = sesgo.id
     group by sesgo.descripcion;
 
 -- Versión del endpoint (el usuario puede escoger ver un sesgo en particular)
-select 
+
+select
     sesgo.descripcion as sesgo,
     sum(incidente.numero_victimas_menores) as total_victimas_menores,
     sum(incidente.numero_victimas_adultas) as total_victimas_adultas,
-    sum(incidente.numero_victimas_menores)::decimal / 
+    sum(incidente.numero_victimas_menores)::decimal /
     nullif(sum(incidente.numero_victimas_adultas), 0)
-    as ratio_menores_adultos
+    as ratio_menores_adultos,
+    (sum(incidente.numero_victimas_menores)::decimal / 
+    nullif(sum(incidente.numero_victimas_menores) + sum(incidente.numero_victimas_adultas), 0) * 100)
+    as porcentaje_menores
     from incidente
     inner join incidente_sesgo on incidente.id = incidente_sesgo.incidente_id
     inner join sesgo on incidente_sesgo.sesgo_id = sesgo.id
     where sesgo.descripcion = {path del endpoint}
     group by sesgo.descripcion;
 ```
+#### Resultados
+![Comb ofensa-sesgo](./graficos/query5.png)
 
+Con este query lo que quisimos analizar es el ratio de crímenes cometidos contra menores de edad por cada adulto, agrupado por sesgo. La pregunta “general” que buscamos responder es “¿Hay sesgos que atacan más a menores de edad?”. Para obtener los resultados, primero se sumó el total de víctimas menores de edad por sesgo, y eso se dividió entre el total de víctimas adultas por sesgo. Para poder leer los datos con mayor facilidad, añadimos una columna de “% Menores” la cual es calculada dividiendo el total de víctimas menores de edad por sesgo, dividido entre el total de víctimas por sesgo, multiplicado por 100. 
+
+Como se muestra en la gráfica, el sesgo con mayor porcentaje de víctimas menores de edad es “Anti-Mental Disability” donde el 23% de las víctimas son niños y tiene un ratio de 0.314 (por cada 3-4 adultos víctimas, hay un menor víctima). Varios en la lista son sesgos relacionados a la comunidad LGBT+.  Existen varias razones para que este sea el caso: para empezar, existe una mayor cantidad de personas en el mundo con enfermedades mentales que personas LGBT+ e igualmente conforme avanza la ciencia, se han conseguido mejores indicadores para poder diagnosticar problemas mentales como el autismo, el TDAH, la dislexia, etc. Específicamente se sabe que los jóvenes con autismo tienen una alta probabilidad de sufrir violencia por parte de sus familiares o compañeros de escuela Esta misma lógica aplica a los niños con discapacidades físicas, que como podemos ver los menores de edad representan el 15% del total de víctimas de este sesgo.
+
+ Igualmente las generaciones actuales han podido explorar más temas de sexualidad e identidad de género, por lo que es más común que gente joven se identifique con la comunidad LGBT+, lo cual aumenta su riesgo de sufrir violencia.
+
+---
 ### 7.6 Estados con mayor densidad de incidentes
 
 **Pregunta:** ¿Cuál estado es "hotspot" de crímenes de odio?
@@ -619,7 +670,23 @@ select
 
 ```sql
 --Versión para conseguir gráficas y/o tablas + versión para el endpoint (no recibe parámetros del path)
-with incidentes_por_anio as (
+with poblacion_estado as (
+    select
+        estado.nombre as estado,
+        sum(
+            coalesce(
+                (gp.min_poblacion + gp.max_poblacion) / 2.0,
+                gp.max_poblacion,
+                gp.min_poblacion
+            )
+        ) as poblacion_estimada
+    from agencia
+    join estado on agencia.estado_abbr = estado.abbr
+    join grupo_poblacional gp on agencia.grupo_poblacional = gp.codigo
+    where gp.min_poblacion is not null or gp.max_poblacion is not null
+    group by estado.nombre
+),
+incidentes_por_anio as (
     select
         estado.nombre as estado,
         incidente.anio_reporte as anio,
@@ -633,7 +700,7 @@ estado_stats as (
     select
         estado,
         sum(incidentes_anio) as total_incidentes,
-        cast(sum(incidentes_anio) as decimal) / count(distinct anio) 
+        cast(sum(incidentes_anio) as decimal) / count(distinct anio)
         as promedio_por_anio
     from incidentes_por_anio
     group by estado
@@ -643,7 +710,7 @@ anio_pico as (
         estado,
         anio as anio_pico,
         row_number() over (
-            partition by estado 
+            partition by estado
             order by incidentes_anio desc
         ) as rn
     from incidentes_por_anio
@@ -652,14 +719,28 @@ select
     estado_stats.estado,
     estado_stats.total_incidentes,
     estado_stats.promedio_por_anio,
-    anio_pico.anio_pico
+    anio_pico.anio_pico,
+    round(pe.poblacion_estimada) as poblacion_estimada,
+    round(
+        (estado_stats.total_incidentes::decimal / nullif(pe.poblacion_estimada, 0)) * 100000,
+        2
+    ) as incidentes_por_100k
 from estado_stats
-inner join anio_pico 
-    on estado_stats.estado = anio_pico.estado 
+inner join anio_pico
+    on estado_stats.estado = anio_pico.estado
     and anio_pico.rn = 1
-order by estado_stats.total_incidentes desc
+left join poblacion_estado pe on pe.estado = estado_stats.estado
+order by incidentes_por_100k desc
 limit 10;
 ```
+#### Resultados
+![Hotspot](./graficos/query6.png)
+
+Este query lo que buscó responder es “¿Cuál estado es "hotspot" de crímenes de odio?”. Para esto, se dividió el total de incidentes por estado entre la población estimada de ese estado (derivada de los rangos del grupo poblacional UCR de cada agencia), multiplicado por 100,000. Esta normalización es importante porque sin ella, estados como California o Nueva York dominan el ranking simplemente por tener más población y más agencias reportando (no necesariamente porque tengan una mayor incidencia proporcional de crímenes de odio).
+
+Como se muestra en la gráfica, el Distrito de Columbia es el verdadero hotspot con 303 incidentes por cada 100,000 habitantes, seguido por Nueva Jersey (256) y Nueva York (239). Esto contrasta con el ranking sin normalizar, donde California encabezaba la lista. Que DC lidere no es sorprendente: es una ciudad-estado extremadamente densa, con alta diversidad racial y religiosa, sede del gobierno federal, y con una presencia policial y judicial que incentiva el reporte activo de este tipo de crímenes. Nueva Jersey y Nueva York comparten características similares: alta densidad urbana, comunidades judías y de color significativas (históricamente los dos grupos más victimizados según los datos), y culturas institucionales que priorizan el registro de hate crimes.
+
+Vale la pena señalar una limitación importante: la población estimada se construyó a partir de los rangos del grupo poblacional UCR de cada agencia, lo cual puede subestimar la población real de estados con muchas agencias de condado o policía estatal sin rango definido. Por esta razón, las agencias federales fueron excluidas del análisis, ya que su población base resultó en un valor irreal de 4,354 por 100k.
 
 ---
 ## 8. Scripts de limpieza
@@ -848,12 +929,32 @@ WHERE h.state_abbr IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- 3. Grupos poblacionales
-INSERT INTO grupo_poblacional (codigo, descripcion)
-SELECT DISTINCT
-    population_group_code,
-    population_group_description
-FROM hate_crime
-WHERE population_group_code IS NOT NULL
+--    Los rangos de población NO vienen en el CSV — están hardcodeados
+--    aquí basándose en la nomenclatura oficial del FBI UCR.
+--    Fuente: population_group_description del dataset.
+INSERT INTO grupo_poblacional
+    (codigo, descripcion, min_poblacion, max_poblacion, rank)
+VALUES
+    ('1A', 'Cities 1,000,000 or over',                                           1000000, NULL,   1),
+    ('1B', 'Cities from 500,000 thru 999,999',                                   500000,  999999, 2),
+    ('1C', 'Cities from 250,000 thru 499,999',                                   250000,  499999, 3),
+    ('2',  'Cities from 100,000 thru 249,999',                                   100000,  249999, 4),
+    ('3',  'Cities from 50,000 thru 99,999',                                     50000,   99999,  5),
+    ('4',  'Cities from 25,000 thru 49,999',                                     25000,   49999,  6),
+    ('5',  'Cities from 10,000 thru 24,999',                                     10000,   24999,  7),
+    ('6',  'Cities from 2,500 thru 9,999',                                       2500,    9999,   8),
+    ('7',  'Cities under 2,500',                                                  0,       2499,   9),
+    ('8A', 'Non-MSA counties 100,000 or over',                                   100000,  NULL,   10),
+    ('8B', 'Non-MSA counties from 25,000 thru 99,999',                           25000,   99999,  10),
+    ('8C', 'Non-MSA counties from 10,000 thru 24,999',                           10000,   24999,  10),
+    ('8D', 'Non-MSA counties under 10,000',                                       0,       9999,   10),
+    ('8E', 'Non-MSA State Police',                                                NULL,    NULL,   10),
+    ('9A', 'MSA counties 100,000 or over',                                        100000,  NULL,   10),
+    ('9B', 'MSA counties from 25,000 thru 99,999',                                25000,   99999,  10),
+    ('9C', 'MSA counties from 10,000 thru 24,999',                                10000,   24999,  10),
+    ('9D', 'MSA counties under 10,000',                                            0,       9999,   10),
+    ('9E', 'MSA State Police',                                                     NULL,    NULL,   10),
+    ('0',  'Possessions (Puerto Rico, Guam, Virgin Islands, and American Samoa)',  NULL,    NULL,   10)
 ON CONFLICT DO NOTHING;
 
 -- 4. Agencias
